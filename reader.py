@@ -1,12 +1,10 @@
 import sqlite3 as sql
 from scraper import generate_dicts as gd
 from scraper import ex
+import time
 
 nums_to_baseatts = dict()
 nums_to_baseatts = {
-    -1: "Name",
-    -2: "LID",
-    -3: "ISO",
     -4: "Genus",
     -5: "Family",
     -6: "Macroarea",
@@ -15,16 +13,22 @@ nums_to_baseatts = {
 }
 
 def make_table(map, name): 
+    print(f"Populating table {name}...")
+    time.sleep(2)
     connection = sql.connect('maps.db')
     curs = connection.cursor()
     ex(curs, f"DROP TABLE IF EXISTS {name};")
     ex(curs, f"CREATE TABLE {name} (inp varchar(255), outp varchar(255));")
     if(name == "ctoa") :
-        for i in range(-8, 0) :
+        for i in range(-8, -3) :
             try:
-                curs.execute(f"INSERT INTO {name} (inp, outp) VALUES (?, ?)", (str(i), nums_to_baseatts[i]))
+                ml = (f"INSERT INTO {name} (inp, outp) VALUES ({str(i)}, {nums_to_baseatts[i]})")
+                print(ml)
+                curs.execute(ml)
+                #curs.execute(f"INSERT INTO {name} (inp, outp) VALUES (?, ?)", (str(i), nums_to_baseatts[i]))
             except sql.OperationalError as e:
                 print(f"Error inserting base attribute {i}: {e}")
+            time.sleep(10)
     for inp, outp in map.items():
         try:
             curs.execute(f"INSERT INTO {name} (inp, outp) VALUES (?, ?)", (str(inp), str(outp)))
@@ -33,6 +37,7 @@ def make_table(map, name):
     connection.commit()
     connection.close()
 
+print("Debug message")
 nex1 = sql.connect('data.db')
 curs1 = nex1.cursor()
 curs1.execute("SELECT * FROM languagetable")
@@ -46,10 +51,11 @@ nex2 = sql.connect('maps.db')
 curs2 = nex2.cursor()
 curs2.execute("SELECT * FROM ctoa")
 print("Codes to Attributes:")
-for row in curs2.fetchall():
-    print(row)
+#for row in curs2.fetchall():
+    #print(row)
 curs2.execute("SELECT * FROM ctov")
 print("Codes to Columns:")
-for row in curs2.fetchall():
-    print(row)
+#for row in curs2.fetchall():
+    #print(row)
 nex2.close()
+print("Finished populating mapping database.")

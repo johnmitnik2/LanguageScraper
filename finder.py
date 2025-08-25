@@ -1,11 +1,6 @@
-import matplotlib as mplot
-import matplotlib.pyplot as plt
-import matplotlib.style as style
-import numpy as np
 import sqlite3 as sql
-from scraper import ex
 import time
-
+paginator = 20
 def populate_map(curs, name) :
     map = dict()
     s = f"SELECT * FROM {name};"
@@ -29,20 +24,47 @@ curs2 = nex2.cursor()
 ctoa = populate_map(curs2, 'ctoa')
 ctov = populate_map(curs2, 'ctov')
 tl = dict()
+leave = 0
+i = 0
+run = 0
+seq = 0
 while True:
-    print("Filtering options (type DONE to finish):")
-    i = 0
+    last_page = 0
+    j = 0
+    if run > 0:
+        if(paginator * (run + 1)) >= len(ctoa):
+                last_page = 1
+        if last_page == 1:
+            print(f"Final {len(ctoa) - run * paginator} options reached (type DONE to finish):")
+        else: 
+            print(f"Options {paginator * run + 1} to {paginator * (run + 1)} of {len(ctoa)} (type DONE to finish, NEXT to see next {paginator} results):")
+    else: 
+        if len(ctoa) <= paginator: 
+            print("All available options (type DONE to finish):")
+        else:
+            print(f"Options {i + 1} to {i + paginator} of {len(ctoa)} (type DONE to finish, NEXT to see next {paginator} results):")
     listnums_to_atts = dict()
     for code, att in ctoa.items():
+        
+        if j < paginator * run:
+            j += 1
+            continue
         i += 1
         print(f"{i}. {att}")
         listnums_to_atts[i] = code
-        if i > 19: 
+        if i % paginator == 0: 
             break
     try :
+        last_page = 0
         inp = input()
         if(inp == "DONE"):
+            if seq == 0:
+                print("You must select at least one filter before finishing.")
+                leave = 1
             break
+        if inp == "NEXT":
+            run += 1
+            continue
         inp = int(inp)
     except ValueError:
         print("Invalid input. Please enter a number.")
@@ -50,7 +72,7 @@ while True:
         nex2.close()
         exit()
     if not inp in listnums_to_atts: 
-        print("Invalid selection. Enter a number from 1 to 200.")
+        print(f"Invalid selection. Enter a number from 1 to {len(ctoa)}.")
         nex1.close()
         nex2.close()
         exit()
@@ -66,6 +88,7 @@ while True:
     types = populate_type_list(curs1, "languagetable", code_swap)
     print("Available types:")
     i = 0
+    run = 0
     temp_ntot = dict()
     for type in types:
         i += 1
@@ -74,6 +97,8 @@ while True:
     try :
         inp = input()
         if(inp == "DONE"):
+            print("Premature cancellation. Exiting program...")
+            leave = 1
             break
         inp = int(inp)
     except ValueError:
@@ -92,7 +117,14 @@ while True:
     for attc, spec in tl.items():
         print(f"{ctoa[attc]}: {spec}")
     print("\nContinuing filtering...")
-    time.sleep(3)
+    seq += 1
+    i = 0
+    time.sleep(1)
+if leave == 1:
+    print("Exiting program...")
+    nex1.close()
+    nex2.close()
+    exit()
 print("Final filter list:")
 for attc, spec in tl.items():
     print(f"{ctoa[attc]}: {spec}")

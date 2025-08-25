@@ -155,8 +155,6 @@ def fill_table_with_dict_(codes_to_atts):
                         feature_id = bcells[0].get_text(strip=True)
                         feature_value = bcells[1].get_text(strip=True)
                         feature_id = feature_id.replace('.', '').replace(' ', '')
-                        fid_i = int(feature_id)
-                        codes_to_atts[fid_i] = bcells[2].get_text(strip=True)
                         updater = f"UPDATE languagetable SET C{feature_id} = \"{feature_value}\" WHERE ID = {idx};"
                         print(updater)
                         try:
@@ -228,3 +226,19 @@ def generate_dicts(codes_to_atts, codes_to_varcols):
         pcode = next_page(driver)
         time.sleep(10)
     driver.quit()
+
+if __name__ == "__main__":
+    connection = sql.connect("data.db")
+    curs = connection.cursor()
+    try:
+        ml = "SELECT LName FROM languagetable;"
+        curs.execute(ml)
+        name_list = curs.fetchall()
+        print("Language table exists. Contents:")
+        print(name_list)
+    except sql.OperationalError as e:
+        print("languagetable does not exist, creating it...")
+        ctoa = dict()
+        ctov = dict()
+        generate_dicts(ctoa, ctov)
+        fill_table_with_dict_(ctoa)
